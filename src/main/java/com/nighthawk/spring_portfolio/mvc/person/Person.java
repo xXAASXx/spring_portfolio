@@ -8,6 +8,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -16,14 +17,18 @@ import javax.persistence.Id;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
+
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.springframework.format.annotation.DateTimeFormat;
+
 import com.vladmihalcea.hibernate.type.json.JsonType;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+
 /*
 Person is a POJO, Plain Old Java Object.
 First set of annotations add functionality to POJO
@@ -42,21 +47,31 @@ public class Person {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+
     // email, password, roles are key attributes to login and authentication
     @NotEmpty
     @Size(min=5)
     @Column(unique=true)
     @Email
     private String email;
+
     @NotEmpty
     private String password;
+
     // @NonNull, etc placed in params of constructor: "@NonNull @Size(min = 2, max = 30, message = "Name (2 to 30 chars)") String name"
     @NonNull
     @Size(min = 2, max = 30, message = "Name (2 to 30 chars)")
     private String name;
+
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date dob;
     
+    @Column(unique=false)
+    private int height;
+
+    @Column(unique=false)
+    private int weight;
+
     /* HashMap is used to store JSON for daily "stats"
     "stats": {
         "2022-11-13": {
@@ -69,12 +84,15 @@ public class Person {
     @Column(columnDefinition = "jsonb")
     private Map<String,Map<String, Object>> stats = new HashMap<>(); 
     
+
     // Constructor used when building object from an API
-    public Person(String email, String password, String name, Date dob) {
+    public Person(String email, String password, String name, Date dob, int height, int weight) {
         this.email = email;
         this.password = password;
         this.name = name;
         this.dob = dob;
+        this.height = height;
+        this.weight = weight;
     }
 
     public String toString(){
@@ -89,14 +107,25 @@ public class Person {
         return -1;
     }
 
-    public static void main(String[] args) throws ParseException{
+    public String getAgeToString(){
+        return ("{ \"name\": " + this.name + " ," + "\"age\": " + this.getAge() + " }" );
+    }
 
+    public int getBmi(){
+        int bmi = (int) ( 703 * this.weight / Math.pow(this.height, 2) );
+        return bmi;
+    }
+
+    public String getBmiToString(){
+        return ("{ \"name\": " + this.name + " ," + "\"bmi\": " + this.getBmi() + " }" );
+    }
+
+    public static void main(String[] args) throws ParseException{
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         Date myDate = sdf.parse("2004-11-17");
 
-        Person allArgsPerson = new Person("armaan.shamsaasef@gmail.com", "12345", "Armaan Shamsaasef", myDate );
+        Person allArgsPerson = new Person("armaan.shamsaasef@gmail.com", "12345", "Armaan Shamsaasef", myDate, 65, 140 );
         Person noArgsPerson = new Person();
-
         System.out.println(noArgsPerson);
         System.out.println(allArgsPerson);
     }
